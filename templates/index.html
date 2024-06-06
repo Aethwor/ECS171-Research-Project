@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Model Prediction</title>
+    <style>
+        body {
+            background-color: rgb(156, 193, 175);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            text-align: center;
+        }
+        header {
+            width: 100%;
+            background-color:  rgb(2, 48, 35);
+            padding: 20px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        h2 {
+            font-size: 2em;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3em; 
+            text-align: center;
+        }
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #c5c5c5;
+        }
+        .progress {
+            width: 25%;
+            height: 30px;
+            background-color: rgb(2, 48, 35);;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+        form {
+            text-align: center;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #000000; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        button:hover {
+            background-color: rgb(2, 48, 35);; 
+            color: rgb(255, 255, 255); 
+        }
+        button:active {
+            background-color: #ffffff; 
+            color: rgb(0, 0, 0); 
+        }
+        label {
+            display: block;
+            margin: 10px auto;
+            width: 500px; 
+            padding: 8px; 
+            font-size: 1.5em;
+            border-radius: 8px; 
+            box-sizing: border-box; 
+        }
+        input, select {
+            display: block;
+            margin: 10px auto;
+            width: 300px; 
+            padding: 6px; 
+            font-size: 1.25em; 
+            border: 1px solid #ccc; 
+            border-radius: 5px;
+            box-sizing: border-box; 
+        }
+        .error-message {
+            color: rgb(252, 0, 0);
+            font-weight: bold;
+        }
+        #modelDescription {
+            font-size: 24px;
+            margin-top: 12px;
+            margin-left: 30px;
+            margin-right: 30px;
+            margin-top: 12px;
+            max-width: 300px;
+            padding: 10px;
+        }
+    </style>
+    <script>
+        let currentSection = 0;
+        
+        function showSection(index) {
+            const sections = document.querySelectorAll('.form-section');
+            sections.forEach((section, i) => {
+                section.classList.toggle('active', i === index);
+            });
+            updateProgress(index);
+        }
+        
+        function nextSection() {
+            const currentSectionElement = document.querySelectorAll('.form-section')[currentSection];
+            const inputs = currentSectionElement.querySelectorAll('input, select');
+            let isValid = true;
+            
+            inputs.forEach(input => {
+                if (!input.checkValidity()) {
+                    isValid = false;
+                    input.reportValidity();
+                }
+            });
+
+            if (isValid && currentSection < 3) {
+                currentSection++;
+                showSection(currentSection);
+            }
+        }
+        
+        function prevSection() {
+            if (currentSection > 0) {
+                currentSection--;
+                showSection(currentSection);
+            }
+        }
+        
+        function updateDescription() {
+            const descriptions = {
+                'model1': 'Decision Tree Model: A decision tree is supervised learning classification and regression technique. It starts with an attribute and then splits into different branches based on the attributes values. It will then stop expanding the subbraches once the tree is homogeneous (all data points in a branch are of the same class). This will then be repeated for every node of a branch.\n \nAccuracy: 97.35% \nMean Squared Error: 5.09%',
+                'model2': 'Linear Regression Model: Linear regression is a simple technique that is used for predictive modeling. Specifically, it helps represent a linear relationship between the dependent variable y (Stress Level) and independent variables X (all items asked to be inputted. e.g. gender, age, etc)  \n\nCoefficient of Determination: 90.17% \nMean Squared Error: 32.21%',
+                'model3': 'Random Forest Model: Random forest is an ensemble learning technique that is used to create a forest of decision trees. Within this forest, each tree is independently trained on random samples of the data and a random subset of the features. It utlizies hyperparameters to help control the number of features to try when making a new node. Therefore, it uses randomness to help reduce the correlation between the trees and improval overall performance. \n\nCoefficient of Determination: 98.01 \nMean Squared Error: 6.34%',
+                'model4': 'Naive Bayes Model: Naive Bayes is a simple form of Bayesian Network as it starts with a single root node which represents the class label. All features nodes are then directly connected to the class node. Therefore, it makes the assumption that all features are conditionally independent of a given class label. This then reduces the complexity of the model as it allows for a more efficient computation of probabilities. \n\nAccuracy: 93% \n Mean Squared Error: 32.21%: '
+            };
+            const selectedModel = document.getElementById('model').value;
+            const description = descriptions[selectedModel] || '';
+            document.getElementById('modelDescription').innerText = description;
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.getElementById('model-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const model = document.getElementById('model').value;
+                if (!model) {
+                    alert("Please select a model before submitting.");
+                    return;
+                }
+                this.action = `/predict/${model}`;
+                console.log(`Form action set to: ${this.action}`);
+                this.submit();
+            });
+        });
+
+        function updateProgress(index) {
+            const progress = document.querySelector('.progress');
+            progress.style.width = ((index + 1) / 4 * 100) + '%';
+            progress.textContent = `Step ${index + 1} of 4`;
+        }
+
+        function setModelAndSubmit(model) {
+            const form = document.getElementById('model-form');
+            form.action = '/predict/' + model;
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form)
+            })
+            .then(response => response.json())
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+        }
+        
+        window.onload = () => {
+            showSection(currentSection);
+        };
+    </script>
+</head>
+<body>
+    <h1>Multi-Model Prediction</h1>
+    <div class="progress-bar">
+        <div class="progress">Step 1 of 4</div>
+    </div>
+    <form id="model-form" method="post">
+        <div class="form-section active" id="daily-habits">
+            <h2>Daily Habits</h2>
+            <label for="daily_steps">Daily Steps:</label>
+            <input type="number" id="daily_steps" name="Daily Steps" min="0" required><br><br>
+            <button type="button" onclick="nextSection()">Next</button>
+        </div>
+        
+        <div class="form-section" id="sleeping-habits">
+            <h2>Sleeping Habits</h2>
+            <label for="sleep_duration">Sleep Duration (within 24 hours):</label>
+            <input type="number" step="0.1" id="sleep_duration" name="Sleep Duration" min="0" max="24" required><br><br> 
+            <label for="quality_of_sleep">Quality of Sleep (1: Very Bad, 10: Very Good):</label>
+            <input type="number" id="quality_of_sleep" name="Quality of Sleep" min="1" max="10" required><br><br>
+            <button type="button" onclick="prevSection()">Previous</button>
+            <button type="button" onclick="nextSection()">Next</button>
+        </div>
+        
+        <div class="form-section" id="personal-info">
+            <h2>Personal Information</h2>
+            <label for="gender">Gender:</label>
+            <select id="gender" name="Gender" required>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+            </select><br><br>
+            
+            <label for="age">Age:</label>
+
+            <input type="number" id="age" name="Age" min="1" max="120" required><br><br>
+            
+            <label for="heart_rate">Heart Rate:</label>
+            <input type="number" id="heart_rate" name="Heart Rate" min="0" max="250" required><br><br>
+            
+            <button type="button" onclick="prevSection()">Previous</button>
+            <button type="button" onclick="nextSection()">Next</button>
+        </div>
+        
+        <div class="form-section" id="model-selection">
+            <h2>Select Prediction Model</h2>
+            <select name="model" id="model" onchange="updateDescription()">
+                <option value="" disabled selected>Select one</option>
+                <option value="model1">Decision Tree Model</option>
+                <option value="model2">Linear Regression Model</option>
+                <option value="model3">Random Forest Model</option>
+                <option value="model4">Naive Bayes Model</option>
+            </select>
+            <br>
+            <span id="modelDescription" font-size="1.25em"></span>
+            <br>
+            <br>
+            <button type="button" onclick="prevSection()">Previous</button>
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+    <div id="error-message" class="error-message"></div>    
+</body>
+</html>
